@@ -108,8 +108,10 @@ def hexToBinary(hex):
     'F': "1111"}
     binary = ""
     for i in range(len(hex)):
+        
         binary = binary + table[hex[i]]
     return binary
+
 def binaryToHex(binary):
     table = {"0000": '0',
     "0001": '1',
@@ -146,10 +148,10 @@ def shimmyToTheLeft(cipher, numShifts):
 def xor(a, b):
     ans = ""
     for i in range(len(a)):
-    if a[i] == b[i]:
-    ans = ans + "0"
-    else:
-    ans = ans + "1"
+        if a[i] == b[i]:
+            ans = ans + "0"
+        else:
+            ans = ans + "1"
     return ans
 def binaryToDec(binary):
     decimal, i, n = 0, 0, 0
@@ -164,7 +166,71 @@ def decimalToBin(num):
     if (len(res) % 4 != 0):
         div = len(res) / 4
         div = int(div)
-    counter = (4 * (div + 1)) - len(res)
-    for i in range(0, counter):
-        res = '0' + res
+        counter = (4 * (div + 1)) - len(res)
+        for i in range(0, counter):
+            res = '0' + res
     return res
+
+def decryption(ciphertext, roundKeysBin):
+    ciphertext = hexToBinary(ciphertext)
+    # first permutation
+    ciphertext = permute(ciphertext, firstPerm, 64)
+    # split
+    left = ciphertext[0:32]
+    right = ciphertext[32:64]
+    
+    for i in range(15, -1, -1):  # Reverse order of rounds for decryption
+        right_expanded = permute(right, expDeBox, 48)
+        # XOR RoundKey[i] and right_expanded
+        rightExpand = xor(right_expanded, roundKeysBin[i])
+        sbox_str = ""
+        for j in range(0, 8):
+            row = binaryToDec(int(rightExpand[j * 6] + rightExpand[j * 6 + 5]))
+            col = binaryToDec(int(rightExpand[j * 6 + 1] + rightExpand[j * 6 + 2] + rightExpand[j * 6 + 3] + rightExpand[j * 6 + 4]))
+            val = sBox[j][row][col]
+            sbox_str = sbox_str + decimalToBin(val)
+        
+        # Straight D-box: After substituting rearranging the bits
+        sbox_str = permute(sbox_str, permut, 32)
+        result = xor(left, sbox_str)
+        left = result
+        if (i != 0):  # Only swap left and right until the last round
+            left, right = right, left
+        
+    # Final permutation step after the last round
+    combine = left + right
+    plaintext = permute(combine, finalPerm, 64)
+    
+    return plaintext
+
+# Defining the main function for decryption
+def main_decryption():
+    message1 = "85E813540F0AB405"  # Example ciphertext
+    message2 = "85E813540F0AB405"  # Example ciphertext
+    key = "133457799BBCDFF1"  # Example key
+    
+    # Key generation
+    key = hexToBinary(key)
+    key = permute(key, keyp, 56)
+    
+    left = key[0:28]
+    right = key[28:56]
+    roundKeyBin = []
+    
+    for i in range(0, 16):
+        left = shimmyToTheLeft(left, shiftTable[i])
+        right = shimmyToTheLeft(right, shiftTable[i])
+        combine_str = left + right
+        roundKey = permute(combine_str, keyComp, 48)
+        roundKeyBin.append(roundKey)
+    
+    print("Decryption")
+    
+    # Decrypt the messages using the round keys
+    plaintext1 = binaryToHex(decryption(message1, roundKeyBin))
+    plaintext2 = binaryToHex(decryption(message2, roundKeyBin))
+    
+    print("Plaintext One : ", plaintext1)
+    print("Plaintext Two : ", plaintext2)
+
+main_decryption()

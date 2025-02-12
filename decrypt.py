@@ -5,8 +5,7 @@ firstPerm = [58, 50, 42, 34, 26, 18, 10, 2,
     57, 49, 41, 33, 25, 17, 9, 1,
     59, 51, 43, 35, 27, 19, 11, 3,
     61, 53, 45, 37, 29, 21, 13, 5,
-    63, 55, 47, 39, 31, 23, 15, 7]
-    # Expansion D-box Table
+    63, 55, 47, 39, 31, 23, 15, 7
 
 expDeBox = [32, 1, 2, 3, 4, 5, 4, 5,
     6, 7, 8, 9, 8, 9, 10, 11,
@@ -14,7 +13,6 @@ expDeBox = [32, 1, 2, 3, 4, 5, 4, 5,
     16, 17, 18, 19, 20, 21, 20, 21,
     22, 23, 24, 25, 24, 25, 26, 27,
     28, 29, 28, 29, 30, 31, 32, 1]
-    # Straight Permutation Table
 
 permut = [16, 7, 20, 21,
     29, 12, 28, 17,
@@ -173,15 +171,13 @@ def decimalToBin(num):
 
 def decryption(ciphertext, roundKeysBin):
     ciphertext = hexToBinary(ciphertext)
-    # first permutation
     ciphertext = permute(ciphertext, firstPerm, 64)
-    # split
     left = ciphertext[0:32]
     right = ciphertext[32:64]
     
-    for i in range(15, -1, -1):  # Reverse order of rounds for decryption
+    for i in range(15, -1, -1): 
         right_expanded = permute(right, expDeBox, 48)
-        # XOR RoundKey[i] and right_expanded
+    
         rightExpand = xor(right_expanded, roundKeysBin[i])
         sbox_str = ""
         for j in range(0, 8):
@@ -189,27 +185,23 @@ def decryption(ciphertext, roundKeysBin):
             col = binaryToDec(int(rightExpand[j * 6 + 1] + rightExpand[j * 6 + 2] + rightExpand[j * 6 + 3] + rightExpand[j * 6 + 4]))
             val = sBox[j][row][col]
             sbox_str = sbox_str + decimalToBin(val)
-        
-        # Straight D-box: After substituting rearranging the bits
+    
         sbox_str = permute(sbox_str, permut, 32)
         result = xor(left, sbox_str)
         left = result
-        if (i != 0):  # Only swap left and right until the last round
+        if (i != 0): 
             left, right = right, left
-        
-    # Final permutation step after the last round
+   
     combine = left + right
     plaintext = permute(combine, finalPerm, 64)
     
     return plaintext
 
-# Defining the main function for decryption
 def main_decryption():
-    message1 = "85E813540F0AB405"  # Example ciphertext
-    message2 = "85E813540F0AB405"  # Example ciphertext
-    key = "133457799BBCDFF1"  # Example key
+    message1 = "85E813540F0AB405"  
+    message2 = "85E813540F0AB405"  
+    key = "133457799BBCDFF1" 
     
-    # Key generation
     key = hexToBinary(key)
     key = permute(key, keyp, 56)
     
@@ -226,7 +218,6 @@ def main_decryption():
     
     print("Decryption")
     
-    # Decrypt the messages using the round keys
     plaintext1 = binaryToHex(decryption(message1, roundKeyBin))
     plaintext2 = binaryToHex(decryption(message2, roundKeyBin))
     
